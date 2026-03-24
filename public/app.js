@@ -98,6 +98,7 @@ const btnAdd = document.getElementById('btnAdd');
 const btnConnect = document.getElementById('btnConnect');
 const btnDelete = document.getElementById('btnDelete');
 const btnExport = document.getElementById('btnExport');
+const btnUndo = document.getElementById('btnUndo');
 const tabProd = document.getElementById('tabProd');
 const tabDev = document.getElementById('tabDev');
 const devInfo = document.getElementById('devInfo');
@@ -667,8 +668,11 @@ btnApprove.addEventListener('click', e => { e.stopPropagation(); send({ type: 'a
 btnPush.addEventListener('click', e => { e.stopPropagation(); send({ type: 'pushToProduction' }); });
 btnDiscard.addEventListener('click', e => { e.stopPropagation(); send({ type: 'discardDev' }); });
 
+btnUndo.addEventListener('click', e => { e.stopPropagation(); send({ type: 'undo' }); });
+
 window.addEventListener('keydown', e => {
   if (e.key === 'Escape') setMode('pan');
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); send({ type: 'undo' }); }
 });
 
 // === EXPORT ===

@@ -28,6 +28,8 @@ function loadState() {
 
 let state = loadState();
 let savePending = false;
+const MAX_UNDO = 50;
+let undoStack = []; // stores snapshots of state before each mutation
 
 function saveState() {
   if (savePending) return;
@@ -88,6 +90,11 @@ function getTarget(ws, target) {
 
 function connKey(from, to) { return `${from}->${to}`; }
 
+function pushUndo() {
+  undoStack.push(JSON.parse(JSON.stringify({ nextId: state.nextId, production: state.production, dev: state.dev })));
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
 // --- WebSocket ---
 wss.on('connection', (ws, req) => {
   const ip = getIp(req);
@@ -118,9 +125,20 @@ wss.on('connection', (ws, req) => {
 function handleMessage(ws, ip, msg) {
   switch (msg.type) {
 
+    case 'undo': {
+      if (undoStack.length === 0) return send(ws, { type: 'error', message: 'Nothing to undo.' });
+      const prev = undoStack.pop();
+      state.nextId = prev.nextId;
+      state.production = prev.production;
+      state.dev = prev.dev;
+      broadcastState();
+      break;
+    }
+
     case 'addBubble': {
       const chart = getTarget(ws, msg.target);
       if (!chart) return send(ws, { type: 'error', message: 'Cannot edit this chart right now.' });
+      pushUndo();
       const id = state.nextId++;
       const b = { id, x: msg.x, y: msg.y, w: msg.w || 140, h: msg.h || 64, label: msg.label || 'Bubble' };
       chart.bubbles.push(b);
@@ -131,6 +149,7 @@ function handleMessage(ws, ip, msg) {
     case 'moveBubble': {
       const chart = getTarget(ws, msg.target);
       if (!chart) return;
+      pushUndo();
       const b = chart.bubbles.find(b => b.id === msg.id);
       if (b) { b.x = msg.x; b.y = msg.y; }
       broadcastState();
@@ -140,6 +159,7 @@ function handleMessage(ws, ip, msg) {
     case 'renameBubble': {
       const chart = getTarget(ws, msg.target);
       if (!chart) return;
+      pushUndo();
       const b = chart.bubbles.find(b => b.id === msg.id);
       if (b) { b.label = msg.label; b.w = msg.w || b.w; }
       broadcastState();
@@ -149,12 +169,12 @@ function handleMessage(ws, ip, msg) {
     case 'deleteBubble': {
       const chart = getTarget(ws, msg.target);
       if (!chart) return;
+      pushUndo();
 
       if (msg.target === 'dev' && state.dev) {
         if (state.dev.baseBubbleIds.includes(msg.id)) {
           if (!state.dev.removedBubbleIds.includes(msg.id)) {
             state.dev.removedBubbleIds.push(msg.id);
-            // Also mark connections involving this bubble as removed
             state.dev.connections.forEach(c => {
               if (c.from === msg.id || c.to === msg.id) {
                 const key = connKey(c.from, c.to);
@@ -179,10 +199,10 @@ function handleMessage(ws, ip, msg) {
     case 'addConnection': {
       const chart = getTarget(ws, msg.target);
       if (!chart) return;
+      pushUndo();
       const exists = chart.connections.some(c => c.from === msg.from && c.to === msg.to);
       const wps = Array.isArray(msg.waypoints) ? msg.waypoints.map(p => ({ x: p.x, y: p.y })) : [];
       if (!exists) chart.connections.push({ from: msg.from, to: msg.to, waypoints: wps });
-      // If in dev and this was a removed connection, un-remove it
       if (msg.target === 'dev' && state.dev) {
         const key = connKey(msg.from, msg.to);
         state.dev.removedConnectionKeys = state.dev.removedConnectionKeys.filter(k => k !== key);
@@ -194,6 +214,7 @@ function handleMessage(ws, ip, msg) {
     case 'deleteConnection': {
       const chart = getTarget(ws, msg.target);
       if (!chart) return;
+      pushUndo();
       if (msg.target === 'dev' && state.dev) {
         const key = connKey(msg.from, msg.to);
         if (state.dev.baseConnectionKeys.includes(key)) {
@@ -212,6 +233,7 @@ function handleMessage(ws, ip, msg) {
 
     case 'forkDev': {
       if (state.dev) return; // already exists, no-op
+      pushUndo();
       state.dev = {
         author: ip,
         baseBubbleIds: state.production.bubbles.map(b => b.id),
@@ -228,6 +250,7 @@ function handleMessage(ws, ip, msg) {
 
     case 'discardDev': {
       if (!state.dev) return;
+      pushUndo();
       state.dev = null;
       broadcastState();
       break;
@@ -237,6 +260,7 @@ function handleMessage(ws, ip, msg) {
       if (!state.dev) return;
       if (ip === state.dev.author) return send(ws, { type: 'error', message: 'Author cannot approve their own dev version.' });
       if (state.dev.approvals.includes(ip)) return send(ws, { type: 'error', message: 'You have already approved.' });
+      pushUndo();
       state.dev.approvals.push(ip);
       broadcastState();
       break;
@@ -247,7 +271,7 @@ function handleMessage(ws, ip, msg) {
       if (state.dev.approvals.length < APPROVALS_REQUIRED) {
         return send(ws, { type: 'error', message: `Need ${APPROVALS_REQUIRED} approvals (have ${state.dev.approvals.length}).` });
       }
-      // Merge: take dev bubbles minus removed, take dev connections minus removed
+      pushUndo();
       const removedSet = new Set(state.dev.removedBubbleIds);
       const removedConnSet = new Set(state.dev.removedConnectionKeys);
       state.production = {

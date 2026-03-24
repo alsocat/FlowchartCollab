@@ -62,8 +62,9 @@
   #devInfo button:disabled { opacity: 0.35; cursor: not-allowed; }
 
   #hint {
-    position: fixed; bottom: 56px; left: 50%; transform: translateX(-50%);
+    position: fixed; bottom: 16px; right: 16px; text-align: right;
     color: #6c7086; font-size: 12px; pointer-events: none; user-select: none;
+    line-height: 1.6;
   }
 
   #error {
@@ -80,6 +81,8 @@
   <button id="btnDelete">Delete</button>
   <div class="sep"></div>
   <button id="btnExport">Export PNG</button>
+  <div class="sep"></div>
+  <button id="btnUndo">Undo</button>
 </div>
 
 <div id="viewTabs">
@@ -99,7 +102,7 @@
   <button class="btn-discard" id="btnDiscard">Discard</button>
 </div>
 
-<div id="hint">Scroll to zoom &middot; Drag to pan &middot; Double-click to rename &middot; Connect: click empty space to add waypoints, right-click to undo</div>
+<div id="hint">Scroll to zoom<br>Drag to pan<br>Double-click to rename<br>Connect: click grid to add waypoints</div>
 <div id="error" id="errorMsg"></div>
 <canvas id="c"></canvas>
 <script src="app.js"></script>
