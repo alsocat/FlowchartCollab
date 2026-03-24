@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(timeout 3 node server.js)",
+      "Bash(node -c server.js)",
+      "Bash(node -c public/app.js)"
+    ]
+  }
+}

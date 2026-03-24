@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flowchart</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1e1e2e; font-family: system-ui, sans-serif; color: #cdd6f4; }
+  canvas { display: block; cursor: grab; }
+  canvas.grabbing { cursor: grabbing; }
+  canvas.connecting { cursor: crosshair; }
+
+  #toolbar {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; z-index: 10; flex-wrap: wrap; justify-content: center;
+  }
+  #toolbar button {
+    padding: 6px 14px; border: none; border-radius: 8px;
+    background: #313244; color: #cdd6f4; font-size: 13px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  #toolbar button:hover { background: #45475a; }
+  #toolbar button.active { background: #89b4fa; color: #1e1e2e; }
+  #toolbar button:disabled { opacity: 0.35; cursor: not-allowed; }
+  #toolbar .sep { width: 1px; background: #45475a; margin: 0 4px; }
+
+  #viewTabs {
+    position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 4px; z-index: 10;
+  }
+  #viewTabs button {
+    padding: 5px 16px; border: none; border-radius: 6px;
+    background: #313244; color: #cdd6f4; font-size: 13px; cursor: pointer;
+  }
+  #viewTabs button.active { background: #a6e3a1; color: #1e1e2e; }
+  #viewTabs button.dev-active { background: #f9e2af; color: #1e1e2e; }
+  #viewTabs button.dev-clean { background: #a6e3a1; color: #1e1e2e; }
+
+  #userList {
+    position: fixed; top: 16px; right: 16px; z-index: 10;
+    background: #313244; border-radius: 8px; padding: 8px 12px;
+    font-size: 12px; max-width: 200px;
+  }
+  #userList .title { color: #6c7086; margin-bottom: 4px; }
+  #userList .ip { padding: 2px 0; }
+  #userList .ip.you { color: #89b4fa; }
+
+  #devInfo {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 10px; align-items: center; z-index: 10;
+    background: #313244; border-radius: 8px; padding: 8px 16px; font-size: 13px;
+  }
+  #devInfo.hidden { display: none; }
+  #devInfo .approvals { color: #f9e2af; }
+  #devInfo button {
+    padding: 4px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;
+  }
+  #devInfo .btn-approve { background: #a6e3a1; color: #1e1e2e; }
+  #devInfo .btn-push { background: #89b4fa; color: #1e1e2e; }
+  #devInfo .btn-discard { background: #f38ba8; color: #1e1e2e; }
+  #devInfo button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  #hint {
+    position: fixed; bottom: 56px; left: 50%; transform: translateX(-50%);
+    color: #6c7086; font-size: 12px; pointer-events: none; user-select: none;
+  }
+
+  #error {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #f38ba8; color: #1e1e2e; padding: 12px 20px; border-radius: 8px;
+    font-size: 14px; z-index: 100; display: none;
+  }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <button id="btnAdd">Add Bubble</button>
+  <button id="btnConnect">Connect</button>
+  <button id="btnDelete">Delete</button>
+  <div class="sep"></div>
+  <button id="btnExport">Export PNG</button>
+</div>
+
+<div id="viewTabs">
+  <button id="tabProd" class="active">Production</button>
+  <button id="tabDev">Dev</button>
+</div>
+
+<div id="userList">
+  <div class="title">Connected Users</div>
+  <div id="userIps"></div>
+</div>
+
+<div id="devInfo" class="hidden">
+  <span class="approvals" id="approvalCount">0/3 approvals</span>
+  <button class="btn-approve" id="btnApprove">Approve</button>
+  <button class="btn-push" id="btnPush" disabled>Push to Production</button>
+  <button class="btn-discard" id="btnDiscard">Discard</button>
+</div>
+
+<div id="hint">Scroll to zoom &middot; Drag to pan &middot; Double-click to rename &middot; Connect: click empty space to add waypoints, right-click to undo</div>
+<div id="error" id="errorMsg"></div>
+<canvas id="c"></canvas>
+<script src="app.js"></script>
+</body>
+</html>
