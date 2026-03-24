@@ -258,7 +258,6 @@ function handleMessage(ws, ip, msg) {
 
     case 'approveDev': {
       if (!state.dev) return;
-      if (ip === state.dev.author) return send(ws, { type: 'error', message: 'Author cannot approve their own dev version.' });
       if (state.dev.approvals.includes(ip)) return send(ws, { type: 'error', message: 'You have already approved.' });
       pushUndo();
       state.dev.approvals.push(ip);

@@ -159,7 +159,7 @@ function updateUI() {
     devInfo.classList.remove('hidden');
     const count = state.dev.approvals.length;
     approvalCount.textContent = `${count}/${approvalsRequired} approvals`;
-    btnApprove.disabled = !hasDev || myIp === state.dev.author || state.dev.approvals.includes(myIp);
+    btnApprove.disabled = !hasDev || state.dev.approvals.includes(myIp);
     btnPush.disabled = !hasDev || count < approvalsRequired;
   } else {
     devInfo.classList.add('hidden');
